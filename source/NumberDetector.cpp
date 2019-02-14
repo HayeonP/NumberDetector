@@ -40,7 +40,7 @@ int NumberDetector::annPredict(IplImage* roi)
 	minMaxLoc(classificationResult, NULL, NULL, NULL, &max_loc);
 
 	result_num = max_loc.x;
-	printf("\t result_num = %d\n\n", result_num);
+	if(NUMBER_DETECT_FLAG) printf("\t result_num = %d\n\n", result_num);
 
 	test.release();
 	classificationResult.release();
@@ -75,70 +75,62 @@ NumberDetector::NumberDetector(string network_path){
 	nnetwork = ml::ANN_MLP::load(network_path);
 }
 
-NumberDetector::NumberDetector(string network_path, int flag) {
-	nnetwork = ml::ANN_MLP::load(network_path);
-	numberDetectDebug = flag;
-}
-
-
 int NumberDetector::detect(Mat input)
 {
 	int speed = 0;
 	int low_limit = 0;
 	IplImage *image = &IplImage(input);
-
+	
 	bool low_lim = false;
 	bool flg = false;
 
-	IplImage* gray = cvCreateImage(cvGetSize(image), 8, 1);
+	IplImage* gray = cvCreateImage(cvSize(image->width, image->height), 8, 1);
 	IplImage* resize = cvCreateImage(cvSize(110, 110), 8, 1);
-	IplImage* binary = cvCreateImage(cvGetSize(resize), 8, 1);
+	IplImage* binary = cvCreateImage(cvSize(resize->width, resize->height), 8, 1);
 	cvSetZero(binary);
-
 	cvCvtColor(image, gray, CV_BGR2GRAY);
 	cvResize(gray, resize);
+		
 	cvAdaptiveThreshold(resize, binary, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY_INV, 21, 10);
-
 	CBlobLabeling label;
 	label.SetParam(binary, 50);
 	label.DoLabeling();
 
 	digit = 0;
-
 	for (int i = 0; i < 3; i++)
 	{
 		resultNum[i][0] = 0;
 		resultNum[i][1] = 0;
 	}
 
-	IplImage* color = cvCreateImage(cvGetSize(binary), 8, 3);
+	IplImage* color = cvCreateImage(cvSize(binary->width, binary->height), 8, 3);
 	cvCvtColor(binary, color, CV_GRAY2BGR);
-	if (numberDetectDebug) printf("Number of lables : %d\n ", label.m_nBlobs);
+	if (NUMBER_DETECT_FLAG) printf("Number of lables : %d\n ", label.m_nBlobs);
 	for (int i = 0; i < label.m_nBlobs; i++)
 	{
-		sprintf(_numName5, "tem/im_%d.bmp", i);
+		
 
 		cvRectangle(color, cvPoint(label.m_recBlobs[i].x, label.m_recBlobs[i].y), cvPoint(label.m_recBlobs[i].x + label.m_recBlobs[i].width, label.m_recBlobs[i].y + label.m_recBlobs[i].height), cvScalar(0, 255, 255), 1, 8, 0);
-		printf(" width = %d \\ height = %d\n", label.m_recBlobs[i].width, label.m_recBlobs[i].height);
-		printf(" x = %d \\ y = %d\n", label.m_recBlobs[i].x, label.m_recBlobs[i].y);
+		if (NUMBER_DETECT_FLAG) printf(" width = %d \\ height = %d\n", label.m_recBlobs[i].width, label.m_recBlobs[i].height);
+		if (NUMBER_DETECT_FLAG) printf(" x = %d \\ y = %d\n", label.m_recBlobs[i].x, label.m_recBlobs[i].y);
 
 		if (label.m_recBlobs[i].x > 10 && label.m_recBlobs[i].y > 10 && ((label.m_recBlobs[i].x + label.m_recBlobs[i].width) < resize->width - 10) && ((label.m_recBlobs[i].y + label.m_recBlobs[i].height) < resize->height - 10))
 		{
 			if ((label.m_recBlobs[i].width >= 5) && (label.m_recBlobs[i].width < 40) && (label.m_recBlobs[i].height >= 25) && (label.m_recBlobs[i].height < 80))
 			{
-				printf("#2");
+				if (NUMBER_DETECT_FLAG) printf("#2");
 				if ((label.m_recBlobs[i].width <= label.m_recBlobs[i].height) && (label.m_recBlobs[i].width * 4 > label.m_recBlobs[i].height))
 				{
-					printf("#3");
+					if (NUMBER_DETECT_FLAG) printf("#3");
 					if ((label.m_recBlobs[i].height - label.m_recBlobs[i + 1].height) < 8 || (label.m_recBlobs[i].height - label.m_recBlobs[i + 1].height) > -8)
 					{
-						printf("#4");
+						if (NUMBER_DETECT_FLAG) printf("#4");
 						if (label.m_recBlobs[i].x < label.m_recBlobs[i + 1].x)
 						{
-							printf("#5");
+							if (NUMBER_DETECT_FLAG) printf("#5");
 							if (label.m_recBlobs[i].x + label.m_recBlobs[i].width < label.m_recBlobs[i + 1].x)
 							{
-								printf("#6");
+								if (NUMBER_DETECT_FLAG) printf("#6");
 								cvRectangle(color, cvPoint(label.m_recBlobs[i].x, label.m_recBlobs[i].y), cvPoint(label.m_recBlobs[i].x + label.m_recBlobs[i].width, label.m_recBlobs[i].y + label.m_recBlobs[i].height), cvScalar(0, 255, 0), 1, 8, 0);
 
 								flg = true;
@@ -147,18 +139,17 @@ int NumberDetector::detect(Mat input)
 
 						if (label.m_recBlobs[i + 1].x < label.m_recBlobs[i].x)
 						{
-							printf("#-5");
+							if (NUMBER_DETECT_FLAG) printf("#-5");
 							if (label.m_recBlobs[i + 1].x + label.m_recBlobs[i + 1].width < label.m_recBlobs[i].x)
 							{
-								printf("#6");
+								if (NUMBER_DETECT_FLAG) printf("#6");
 								cvRectangle(color, cvPoint(label.m_recBlobs[i].x, label.m_recBlobs[i].y), cvPoint(label.m_recBlobs[i].x + label.m_recBlobs[i].width, label.m_recBlobs[i].y + label.m_recBlobs[i].height), cvScalar(0, 255, 0), 1, 8, 0);
 
 								flg = true;
 							}
 						}
 
-						printf("\n");
-
+						if (NUMBER_DETECT_FLAG) printf("\n");
 						if (flg == true)
 						{
 							int matchingNum = 0;
@@ -166,7 +157,6 @@ int NumberDetector::detect(Mat input)
 							IplImage* roi_temp2 = cvCreateImage(cvSize(28, 38), 8, 1);
 							IplImage* roi_temp3 = cvCreateImage(cvSize(label.m_recBlobs[i].width, label.m_recBlobs[i].height), 8, 1);
 							IplImage* roi_temp4 = cvCreateImage(cvSize(18, 28), 8, 1);
-
 							cvSetImageROI(binary, label.m_recBlobs[i]);
 							cvCopy(binary, roi_temp3);
 
@@ -174,15 +164,13 @@ int NumberDetector::detect(Mat input)
 
 							cvCopyMakeBorder(roi_temp4, roi_temp2, cvPoint(5, 5), IPL_BORDER_CONSTANT, CV_RGB(0, 0, 0));
 							cvThreshold(roi_temp2, roi_temp2, 50, 255, CV_THRESH_BINARY);
-
-							cvShowImage("roi_temp2", roi_temp2);
-							cvSaveImage(_numName5, roi_temp2);
+							if(SHOW_FLAG) cvShowImage("roi_temp2", roi_temp2);
 							matchingNum = annPredict(roi_temp2);
 
 							cvReleaseImage(&roi_temp3);
 							cvReleaseImage(&roi_temp2);
 							cvReleaseImage(&roi_temp4);
-
+							
 							if (digit < 3)
 							{
 								resultNum[digit][0] = label.m_recBlobs[i].x;
@@ -230,15 +218,16 @@ int NumberDetector::detect(Mat input)
 		speed = speed*(-1);
 	}
 
-	if (numberDetectDebug) cvShowImage("color", color);
+	if (SHOW_FLAG) cvShowImage("color", color);
 						
 	cvReleaseImage(&color);
 	cvReleaseImage(&gray);
 	cvReleaseImage(&binary);
 	cvReleaseImage(&resize);
+	cout << "Result : " << speed << endl;
 
-	if(numberDetectDebug) cvShowImage("image", image);
-	if (numberDetectDebug) waitKey();
+	if (SHOW_FLAG) cvShowImage("image", image);
+	if(SHOW_FLAG) waitKey();
 
 	return speed;
 }
